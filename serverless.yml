@@ -13,6 +13,7 @@ custom:
     deployment_bucket: ${env:SERVERLESS_DEPLOYMENT_BUCKET}
     lambda_name: ${env:CONTEXT}-${env:SERVICE}-${env:ENVIRONMENT}
     DynamoDBTableName: ${env:CONTEXT}-mybigddbtable-${env:ENVIRONMENT}
+    # delete next section, if DynamoDB autoscaling is not required
     dynamodbAutoscaling:
       iamRoleArn: arn:aws:iam::${self:custom.aws_accountid}:role/devops/${self:custom.context}-${self:custom.environment}-infrastructure
       tablesConfig:
@@ -67,8 +68,6 @@ resources:
         KeySchema:
           - AttributeName: userId
             KeyType: HASH
-        # Set the capacity based on the stage - mandatory
-        # how to do autoscaling?
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1

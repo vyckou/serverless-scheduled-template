@@ -1,0 +1,81 @@
+service: ${env:CONTEXT}
+
+# enables sqs as DLQ for lambdas
+plugins:
+  - serverless-plugin-lambda-dead-letter
+  - serverless-plugin-dynamodb-autoscaling
+
+custom:
+    context: ${env:CONTEXT}
+    service: ${env:SERVICE}
+    environment: ${env:ENVIRONMENT}
+    aws_accountid: ${env:AWS_ACCOUNTID}
+    deployment_bucket: ${env:SERVERLESS_DEPLOYMENT_BUCKET}
+    lambda_name: ${env:CONTEXT}-${env:SERVICE}-${env:ENVIRONMENT}
+    DynamoDBTableName: ${env:CONTEXT}-mybigddbtable-${env:ENVIRONMENT}
+    dynamodbAutoscaling:
+      iamRoleArn: arn:aws:iam::${self:custom.aws_accountid}:role/devops/${self:custom.context}-${self:custom.environment}-infrastructure
+      tablesConfig:
+        DynamoDbTable1:
+          minCapacity: 2
+          maxCapacity: 5
+
+tags:
+  context: ${self:custom.context}
+  stack: ${self:custom.environment}
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: eu-west-1
+  stage: ${opt:stage, 'staging'}
+  deploymentBucket:
+    name: ${self:custom.deployment_bucket}
+    serverSideEncryption: AES256
+
+functions:
+  lambdafunction1:
+    name: ${self:custom.lambda_name}
+    handler: lambda.handler
+    description: <add description here>
+    memorySize: 128
+    timeout: 10
+    reservedConcurrency: 5
+    role: arn:aws:iam::${self:custom.aws_accountid}:role/context/${self:custom.context}-${self:custom.environment}
+    deadLetter:
+      sqs:  ${self:custom.context}-${self:custom.service}deadletter-${self:custom.environment}
+    tags:
+      service: ${self:custom.service}
+    environment:
+      varA: varA
+    events:
+      - schedule:
+          name: ${self:custom.lambda_name}-schedule
+          description: ${self:custom.lambda_name} runs every 5 minutes
+          rate: rate(5 minutes)
+
+
+resources:
+  Resources:
+    DynamoDbTable1:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.DynamoDBTableName}
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        # Set the capacity based on the stage - mandatory
+        # how to do autoscaling?
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        Tags:
+          - Key: context
+            Value: ${self:custom.context}
+          - Key: service
+            Value: ${self:custom.service}
+          - Key: stack
+            Value: ${self:custom.environment}

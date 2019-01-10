@@ -1,0 +1,40 @@
+# Following variables must be specified in GitLab CI group variables set:
+#   * AWS_ACCOUNTID
+#   * SERVERLESS_DEPLOYMENT_BUCKET
+#   * AWS_DEFAULT_REGION
+#   * CI_IMAGE
+#   * VAULT_ADDR
+
+image: ${CI_IMAGE}
+
+variables:
+  CONTEXT: devops
+  SERVICE: serverlesspoc
+
+stages:
+  - staging
+  - production
+
+.serverless:
+  only:
+    - master
+  except:
+    - tags
+  allow_failure: false
+  script:
+    - npm install serverless-plugin-lambda-dead-letter --loglevel=error
+    - npm install serverless-plugin-dynamodb-autoscaling --loglevel=error
+    - vaultenv serverless deploy --stage ${ENVIRONMENT} --verbose
+
+serverless:staging:
+  stage: staging
+  extends: .serverless 
+  variables:
+    ENVIRONMENT: staging
+
+serverless:production:
+  stage: production
+  extends: .serverless
+  when: manual  
+  variables:
+    ENVIRONMENT: production

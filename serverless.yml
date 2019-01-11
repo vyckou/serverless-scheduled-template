@@ -21,10 +21,6 @@ custom:
           minCapacity: 2
           maxCapacity: 5
 
-tags:
-  context: ${self:custom.context}
-  stack: ${self:custom.environment}
-
 provider:
   name: aws
   runtime: python3.6
@@ -33,6 +29,10 @@ provider:
   deploymentBucket:
     name: ${self:custom.deployment_bucket}
     serverSideEncryption: AES256
+  tags:
+    context: ${self:custom.context}
+    service: ${self:custom.service}    
+    stack: ${self:custom.environment}    
 
 functions:
   lambdafunction1:
@@ -45,8 +45,6 @@ functions:
     role: arn:aws:iam::${self:custom.aws_accountid}:role/context/${self:custom.context}-${self:custom.environment}
     deadLetter:
       sqs:  ${self:custom.context}-${self:custom.service}deadletter-${self:custom.environment}
-    tags:
-      service: ${self:custom.service}
     environment:
       varA: varA
     events:

@@ -13,7 +13,6 @@ custom:
     deployment_bucket: ${env:SERVERLESS_DEPLOYMENT_BUCKET}
     lambda_name: ${env:CONTEXT}-${env:SERVICE}-${env:ENVIRONMENT}
     DynamoDBTableName: ${env:CONTEXT}-mybigddbtable-${env:ENVIRONMENT}
-    role: arn:aws:iam::${self:custom.aws_accountid}:role/context/${self:custom.context}-${self:custom.environment}
     # delete next section, if DynamoDB autoscaling is not required
     dynamodbAutoscaling:
       iamRoleArn: arn:aws:iam::${self:custom.aws_accountid}:role/devops/${self:custom.context}-${self:custom.environment}-infrastructure
@@ -33,7 +32,8 @@ provider:
   tags:
     context: ${self:custom.context}
     service: ${self:custom.service}    
-    stack: ${self:custom.environment}    
+    stack: ${self:custom.environment}
+    role: arn:aws:iam::${self:custom.aws_accountid}:role/context/${self:custom.context}-${self:custom.environment}      
 
 functions:
   lambdafunction1:
